@@ -216,17 +216,28 @@ static NSString* globToRegex(NSString *glob);
 - (void)dispatchPacket:(OSCPacket *)packet
 {
     // TODO: bundles...
-    
-    NSArray *patternComponents = [OSCDispatcher splitPatternComponentsToRegex:packet.address];
-    NSAssert1(patternComponents, @"Failed to remove OSC method with invalid address pattern: %@", packet.address);
-    NSArray *nodes = [rootNode descendantsMatchingPattern:patternComponents];
-    [nodes makeObjectsPerformSelector:@selector(dispatchMessage:) withObject:packet];
+
+    if ([packet isBundle]) {
+        for (OSCPacket *childPacket in packet.childPackets) {
+            NSArray *patternComponents = [OSCDispatcher splitPatternComponentsToRegex:childPacket.address];
+            NSAssert1(patternComponents, @"Failed to remove OSC method with invalid address pattern: %@", childPacket.address);
+            NSArray *nodes = [rootNode descendantsMatchingPattern:patternComponents];
+            [nodes makeObjectsPerformSelector:@selector(dispatchMessage:) withObject:childPacket];
+        }
+    }
+    else {
+        NSArray *patternComponents = [OSCDispatcher splitPatternComponentsToRegex:packet.address];
+        NSAssert1(patternComponents, @"Failed to remove OSC method with invalid address pattern: %@", packet.address);
+        NSArray *nodes = [rootNode descendantsMatchingPattern:patternComponents];
+        [nodes makeObjectsPerformSelector:@selector(dispatchMessage:) withObject:packet];
+    }
 }
 
 
 - (NSArray *)cancelQueuedBundles
 {
     // TODO
+	return @[];
 }
 
 
